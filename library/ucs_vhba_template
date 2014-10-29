@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+module: ucs_vhba_template
+version_added: 0.1
+short_description: ucs_vhba_template short description
+description: ucs_vhba_templatedescription
+author: Tory Long
+'''
+
+import sys
+import json
+from UcsSdk import *
+
+EXAMPLES = '''
+Examples
+'''
+
+def ucs_vhba_template(module):
+
+    vhba_templ_name = module.params['template_name']
+    vhba_templ_desc = module.params['template_desc']
+    wwpn_pool_name = module.params['wwpn_pool_name']
+    vhba_vsan_list = module.params['vsan_list']
+    templ_type = module.params['template_type']
+    vhba_switch_id = module.params['switch_id']
+    vhba_templ_name_mod = "org-root/san-conn-templ-" + vhba_templ_name
+
+    results = {}
+
+    try:
+        logging.info("Connecting to UCSM at " + module.params['ucsm_ip'])
+        handle = UcsHandle()
+        login_status = handle.Login(
+            module.params['ucsm_ip'],
+            module.params['ucsm_user'],
+            module.params['ucsm_pw'])
+    except:
+        module.fail_json(msg="Could not login to UCSM")
+
+    try:
+        logging.info("Testing existence of " + vhba_templ_name_mod)
+        test_obj = handle.GetManagedObject(
+                     None,
+                     VnicSanConnTempl.ClassId(),
+                     {VnicSanConnTempl.NAME:vhba_templ_name})
+    except:
+        module.fail_json(msg="Could not test for existence of object")
+
+    obj_exists = lambda test_obj: True if test_obj != [] else False
+
+    if module.params['state'] == "present":
+        if obj_exists(test_obj) == False:
+            try:
+                mo = handle.AddManagedObject(
+                        None,
+                        VnicSanConnTempl.ClassId(),
+                        {VnicSanConnTempl.DESCR: vhba_templ_desc,
+                         VnicSanConnTempl.IDENT_POOL_NAME: wwpn_pool_name,
+                         VnicSanConnTempl.NAME: vhba_templ_name,
+                         VnicSanConnTempl.TEMPL_TYPE: templ_type,
+                         VnicSanConnTempl.DN: vhba_templ_name_mod,
+                         VnicSanConnTempl.SWITCH_ID: vhba_switch_id,
+                         VnicSanConnTempl.POLICY_OWNER: "local",
+                         VnicSanConnTempl.PIN_TO_GROUP_NAME: "",
+                         VnicSanConnTempl.STATS_POLICY_NAME: "default"})
+
+                vhba_vsan_list = vhba_vsan_list.split(",")
+
+                for vhba_vsan_name in vhba_vsan_list:
+                    fc_if_dn = vhba_templ_name_mod + "/if-" + vhba_vsan_name
+                    mo_1 = handle.AddManagedObject(
+                                mo,
+                                VnicFcIf.ClassId(),
+                                {VnicFcIf.DN: fc_if_dn,
+                                 VnicFcIf.NAME: vhba_vsan_name},
+                                True)
+
+            except:
+                module.fail_json(msg="Could not create object")
+        else:
+                results['template_name'] = vhba_templ_name
+                results['created'] = False
+                results['changed'] = False
+                results['state'] = "present"
+    else:
+        if obj_exists(test_obj) == True:
+            try:
+                handle.RemoveManagedObject(test_obj)
+                results['template_name'] = vhba_templ_name
+                results['created'] = False
+                results['changed'] = True
+                results['state'] = "absent"
+            except:
+                module.fail_json(msg="Could not remove object")
+        else:
+                results['template_name'] = vhba_templ_name
+                results['created'] = False
+                results['changed'] = False
+                results['state'] = "absent"
+
+    try:
+        handle.Logout()
+    except UcsLogoutError:
+        module.fail_json(msg="Could not logout of UCSM")
+
+    return results
+
+### ---------------------------------------------------------------------------
+### MAIN
+### ---------------------------------------------------------------------------
+
+def main():
+  module = AnsibleModule(
+    argument_spec = dict(
+      ucsm_ip=dict(required=True),
+      ucsm_user=dict(required=True),
+      ucsm_pw=dict(required=True),
+      state=dict(required=True),
+      template_name=dict(required=True),
+      template_desc=dict(required=True),
+      wwpn_pool_name=dict(required=True),
+      vsan_list=dict(required=True),
+      template_type=dict(required=False, default="updating-template"),
+      switch_id=dict(required=False, default="A"),
+      outputfile=dict(required=False),
+      override=dict(required=False, default=False),
+      logfile=dict(required=False, default=None),
+      timeout=dict(required=False, default=0)
+    ),
+    supports_check_mode = False
+  )
+
+  results = ucs_vhba_template(module)
+
+  module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

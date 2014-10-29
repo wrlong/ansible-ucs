@@ -1,0 +1,7 @@
+--- 
+firmware_policies: 
+  - policy_name: 'fw-pol-ans1'
+    policy_desc: 'test-desc'
+    blade_bundle_version: ''
+    rack_bundle_version: ''
+    state: 'present'

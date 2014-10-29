@@ -1,0 +1,12 @@
+--- 
+wwpn_pools: 
+  - pool_name: 'test-wwpn-ans4'
+    pool_desc: 'test-desc'
+    start_range: '20:00:00:25:B5:E9:FA:00'
+    end_range: '20:00:00:25:B5:E9:FA:FF'
+    state: 'present'
+  - pool_name: 'test-wwpn-ans5'
+    pool_desc: 'test_desc'
+    start_range: '20:00:00:25:B5:E8:FA:00'
+    end_range: '20:00:00:25:B5:E8:FA:FF'
+    state: 'present'

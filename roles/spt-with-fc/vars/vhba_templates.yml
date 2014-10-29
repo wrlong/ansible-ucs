@@ -1,0 +1,8 @@
+--- 
+vhba_templates: 
+  - template_name: 'vhba-tmpl-ans1'
+    template_desc: 'test-desc'
+    wwpn_pool_name: 'test-wwpn-ans5'
+    vsan_list: 'vsan100'
+    switch_id: 'A'
+    state: 'present'

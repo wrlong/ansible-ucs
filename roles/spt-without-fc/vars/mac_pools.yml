@@ -1,0 +1,12 @@
+--- 
+mac_pools: 
+  - pool_name: 'test-pool-ans4'
+    pool_desc: 'test-desc'
+    start_range: '00:25:B5:EC:FA:00'
+    end_range: '00:25:B5:EC:FA:FF'
+    state: 'present'
+  - pool_name: 'test-pool-ans5'
+    pool_desc: 'test_desc'
+    start_range: '00:25:B5:ED:FA:00'
+    end_range: '00:25:B5:ED:FA:FF'
+    state: 'present'

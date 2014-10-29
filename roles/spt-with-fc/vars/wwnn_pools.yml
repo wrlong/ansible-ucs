@@ -1,0 +1,12 @@
+--- 
+wwnn_pools: 
+  - pool_name: 'test-p-wwnn4'
+    pool_desc: 'test-desc'
+    start_range: '20:00:00:25:B5:E0:FA:00'
+    end_range: '20:00:00:25:B5:E0:FA:FF'
+    state: 'present'
+  - pool_name: 'test-p-wwnn5'
+    pool_desc: 'test_desc'
+    start_range: '20:00:00:25:B5:E0:FB:00'
+    end_range: '20:00:00:25:B5:E0:FB:FF'
+    state: 'present'

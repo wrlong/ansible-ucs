@@ -1,0 +1,10 @@
+--- 
+vnic_templates: 
+  - template_name: 'vnic-tmpl-ans1'
+    template_desc: 'test-desc'
+    mac_pool_name: 'test-pool-ans5'
+    qos_policy: 'qos-pol-ans1'
+    vlan_list: 'vlan1,vlan101,vlan201,vlan500'
+    mtu: '1500'
+    switch_id: 'B'
+    state: 'present'

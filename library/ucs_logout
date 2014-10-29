@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+module: ucs_logout
+version_added: 0.1
+short_description: UCS logout
+description:
+   - Login to IP/hostname, with user and pass
+author: Tory Long
+'''
+
+import sys
+import json
+from UcsSdk import *
+
+def ucs_login(module):
+
+    results = {}
+
+    results['changed'] = False
+    results['created'] = False
+
+    try:
+        logging.info("Connecting to UCSM at " + module.params['ucsm_ip'])
+        handle = UcsHandle()
+        login_status = handle.Login(
+            module.params['ucsm_ip'],
+            module.params['ucsm_user'],
+            module.params['ucsm_pw'])
+        results['logged_in'] = True
+        results['changed'] = True
+    except LoginError:
+        module.fail_json(msg="Could not login to UCSM at " + \
+                        module.params['ucsm_ip'])
+    results['ansible_facts']  = { 'ucsm_ip' : module.params['ucsm_ip'],
+                                  'ucsm_user' : module.params['ucsm_user'],
+                                  'ucsm_pw' : module.params['ucsm_pw']}
+    return results
+
+### ---------------------------------------------------------------------------
+### MAIN
+### ---------------------------------------------------------------------------
+
+def main():
+  module = AnsibleModule(
+    argument_spec = dict(
+      ucsm_ip=dict(required=True),
+      ucsm_user=dict(required=True),
+      ucsm_pw=dict(required=True),
+      override=dict(required=False, default=False),
+      logfile=dict(required=False, default=None),
+      timeout=dict(required=False, default=0)
+    ),
+    supports_check_mode = False
+  )
+
+  results = ucs_login(module)
+
+  module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

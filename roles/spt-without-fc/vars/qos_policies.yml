@@ -1,0 +1,6 @@
+--- 
+qos_policies: 
+  - policy_name: 'qos-pol-ans1'
+    policy_desc: 'test-desc'
+    rate: 'line-rate'
+    state: 'present'

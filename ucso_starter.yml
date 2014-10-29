@@ -1,0 +1,8 @@
+---
+- name: Create UCSO Starter UCS Service Profile Templates
+  hosts: ucs-sim
+  connection: local
+  gather_facts: no
+
+- include: nova_node.yml
+- include: ceph_mon_node.yml

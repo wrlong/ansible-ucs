@@ -1,0 +1,12 @@
+--- 
+uuid_pools: 
+  - pool_name: 'uuid-pool-ans4'
+    pool_desc: 'test-desc'
+    start_range: '0000-0025B5001101'
+    end_range: '0000-0025B50011FF'
+    state: 'present'
+  - pool_name: 'uuid-pool-ans5'
+    pool_desc: 'test_desc'
+    start_range: '0000-0025B5001201'
+    end_range: '0000-0025B50012FF'
+    state: 'present'

@@ -1,0 +1,5 @@
+--- 
+maintenance_policies: 
+  - policy_name: 'maint-pol-ans1'
+    policy_desc: 'test-desc'
+    state: 'present'

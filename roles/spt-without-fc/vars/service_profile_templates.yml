@@ -1,0 +1,13 @@
+--- 
+service_profile_templates: 
+  - template_name: 'vnic-tmpl-ans1'
+    template_desc: 'test-desc'
+    template_type: 'updating-template'
+    uuid_pool_name: 'uuid-pool-ans5'
+    server_pool_name: 'svr-pool-ans4'
+    boot_policy_name: 'bfl-pol-ans1'
+    firmware_policy_name: 'fw-pol-ans1'
+    maintenance_policy_name: 'default'
+    power_policy_name: 'default'
+    vnic_templates: 'vnic-tmpl-ans1'
+    state: 'present'

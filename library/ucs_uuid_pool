@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+module: ucs_uuid_pool
+version_added: 0.1
+short_description: ucs_uuid_pool short description
+description: ucs_uuid_pooldescription
+author: Tory Long
+'''
+
+import sys
+import json
+from UcsSdk import *
+
+EXAMPLES = '''
+Examples
+'''
+
+def ucs_uuid_pool(module):
+    pool_name = module.params['pool_name']
+    pool_desc = module.params['pool_desc']
+    start_range = module.params['start_range']
+    end_range = module.params['end_range']
+    pool_range = start_range + "-" + end_range
+
+    results = {}
+
+    try:
+        logging.info("Connecting to UCSM at " + module.params['ucsm_ip'])
+        handle = UcsHandle()
+        login_status = handle.Login(
+            module.params['ucsm_ip'],
+            module.params['ucsm_user'],
+            module.params['ucsm_pw'])
+    except:
+        module.fail_json(msg="Could not login to UCSM")
+
+    try:
+        logging.info("Testing existence of " + \
+                        module.params['pool_name'])
+        test_obj = handle.GetManagedObject(
+                     None,
+                     UuidpoolPool.ClassId(),
+                     {UuidpoolPool.NAME:pool_name})
+    except:
+        module.fail_json(msg="Could not test for existence of object")
+
+    obj_exists = lambda test_obj: True if test_obj != [] else False
+
+    if module.params['state'] == "present":
+        if obj_exists(test_obj) == False:
+            try:
+
+                mo = handle.AddManagedObject(
+                    None,
+                    UuidpoolPool.ClassId(),
+                    {UuidpoolPool.NAME: pool_name,
+                     UuidpoolPool.DESCR: pool_desc,
+                     UuidpoolPool.PREFIX: "derived",
+                     UuidpoolPool.DN: "org-root/uuid-pool-" + pool_name,
+                     UuidpoolPool.ASSIGNMENT_ORDER: "sequential",
+                     UuidpoolPool.POLICY_OWNER: "local"})
+
+                mo_1 = handle.AddManagedObject(
+                    None,
+                    UuidpoolBlock.ClassId(),
+                    {UuidpoolBlock.FROM: start_range,
+                     UuidpoolBlock.TO: end_range,
+                     UuidpoolBlock.DN: "org-root/uuid-pool-" + pool_name +
+                           "/block-from-" + start_range +
+                           "-to-" + end_range})
+
+                results['pool_name'] = pool_name
+                results['created'] = True
+                results['changed'] = True
+                results['state'] = "present"
+            except:
+                module.fail_json(msg="Could not create object")
+        else:
+                results['pool_name'] = pool_name
+                results['created'] = False
+                results['changed'] = False
+                results['state'] = "present"
+    else:
+        if obj_exists(test_obj) == True:
+            try:
+                handle.RemoveManagedObject(test_obj)
+                results['pool_name'] = pool_name
+                results['created'] = False
+                results['changed'] = True
+                results['state'] = "absent"
+            except:
+                module.fail_json(msg="Could not remove object")
+        else:
+                results['pool_name'] = pool_name
+                results['created'] = False
+                results['changed'] = False
+                results['state'] = "absent"
+
+    try:
+        handle.Logout()
+    except:
+        module.fail_json(msg="Could not logout of UCSM")
+
+    return results
+
+### ---------------------------------------------------------------------------
+### MAIN
+### ---------------------------------------------------------------------------
+
+def main():
+  module = AnsibleModule(
+    argument_spec = dict(
+      ucsm_ip=dict(required=True),
+      ucsm_user=dict(required=True),
+      ucsm_pw=dict(required=True),
+      state=dict(required=True),
+      pool_name=dict(required=True),
+      pool_desc=dict(required=True),
+      start_range=dict(required=True),
+      end_range=dict(required=True),
+      outputfile=dict(required=False),
+      override=dict(required=False, default=False),
+      logfile=dict(required=False, default=None),
+      timeout=dict(required=False, default=0)
+    ),
+    supports_check_mode = False
+  )
+
+  results = ucs_uuid_pool(module)
+
+  module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

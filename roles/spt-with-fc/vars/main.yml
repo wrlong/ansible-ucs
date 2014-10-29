@@ -1,0 +1,12 @@
+--- 
+pools: 
+  - pool_name: 'test-pool-ans2'
+    end_range: '00:25:B5:EB:FA:FF'
+    pool_desc: 'test-desc'
+    start_range: '00:25:B5:EB:FA:00'
+    state: 'present'
+  - pool_name: 'test-pool-ans3'
+    end_range: '00:25:B5:EA:FA:FF'
+    pool_desc: 'test_desc'
+    start_range: '00:25:B5:EA:FA:00'
+    state: 'present'

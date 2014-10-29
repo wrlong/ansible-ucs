@@ -1,0 +1,188 @@
+---
+#- include_vars: "mac_pools.yml"
+#- include_vars: "uuid_pools.yml"
+- include_vars: "wwpn_pools.yml"
+- include_vars: "wwnn_pools.yml"
+#- include_vars: "server_pools.yml"
+
+#- include_vars: "boot_lan_policies.yml"
+#- include_vars: "qos_policies.yml"
+#- include_vars: "firmware_policies.yml"
+#- include_vars: "maintenance_policies.yml"
+
+#- include_vars: "vnic_templates.yml"
+- include_vars: "vhba_templates.yml"
+#- include_vars: "service_profile_templates.yml"
+
+- name: UCSM IP credentials
+  debug: var=ucsm_ip
+
+- name: UCSM user credentials
+  debug: var=ucsm_cred_user
+
+- name: UCSM pw credentials
+  debug: var=ucsm_cred_pw
+
+- name: MAC pool vars
+  debug: var=mac_pools
+
+- name: UUID pool vars
+  debug: var=uuid_pools
+
+- name: WWPN pool vars
+  debug: var=wwpn_pools
+
+- name: WWNN pool vars
+  debug: var=wwnn_pools
+
+- name: WWNN pool vars
+  debug: var=server_pools
+
+- name: Boot from LAN policy vars
+  debug: var=boot_lan_policies
+
+- name: QoS policy vars
+  debug: var=qos_policies
+
+- name: Firmware policy vars
+  debug: var=firmware_policies
+
+- name: Maintenance policy vars
+  debug: var=maintenance_policies
+
+- name: vNIC template vars
+  debug: var=vnic_templates
+
+- name: vHBA template vars
+  debug: var=vhba_templates
+
+- name: Service Profile template vars
+  debug: var=service_profile_templates
+
+- name: Create UCS MAC pools
+  ucs_mac_pool:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    pool_name={{ item.pool_name }}
+    pool_desc={{ item.pool_desc }}
+    start_range={{ item.start_range }}
+    end_range={{ item.end_range }}
+  with_items: mac_pools
+
+- name: Create UCS UUID pool 
+  ucs_uuid_pool:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    pool_name={{ item.pool_name }}
+    pool_desc={{ item.pool_desc }}
+    start_range={{ item.start_range }}
+    end_range={{ item.end_range }}
+  with_items: uuid_pools
+    
+- name: Create UCS WWPN Pool
+  ucs_wwpn_pool:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    pool_name={{ item.pool_name }}
+    pool_desc={{ item.pool_desc }}
+    start_range={{ item.start_range }}
+    end_range={{ item.end_range }}
+  with_items: wwpn_pools
+   
+- name: Create UCS WWNN Pool
+  ucs_wwnn_pool:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    pool_name={{ item.pool_name }}
+    pool_desc={{ item.pool_desc }}
+    start_range={{ item.start_range }}
+    end_range={{ item.end_range }}
+  with_items: wwnn_pools
+    
+- name: Create UCS Server Pool
+  ucs_server_pool:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    pool_name={{ item.pool_name }}
+    pool_desc={{ item.pool_desc }}
+    chassis_range={{ item.chassis_range }}
+    slot_range={{ item.slot_range }}
+  with_items: server_pools
+
+- name: Create UCS LAN boot policy
+  ucs_boot_lan_policy:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    policy_name={{ item.policy_name }}
+    policy_desc={{ item.policy_desc }}
+    vnic_name={{ item.vnic_name }}
+  with_items: boot_lan_policies
+
+- name: Create UCS QoS policy
+  ucs_qos_policy:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    policy_name={{ item.policy_name }}
+    policy_desc={{ item.policy_desc }}
+    rate={{ item.rate }}
+  with_items: qos_policies
+
+- name: Create UCS firmware policy
+  ucs_firmware_policy:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    policy_name={{ item.policy_name }}
+    policy_desc={{ item.policy_desc }}
+    blade_bundle_version={{ item.blade_bundle_version }}
+    rack_bundle_version={{ item.rack_bundle_version }}
+  with_items: firmware_policies
+
+- name: Create UCS maintenance policy
+  ucs_maintenance_policy:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    policy_name={{ item.policy_name }}
+    policy_desc={{ item.policy_desc }}
+  with_items: maintenance_policies
+
+- name: Create UCS vnic template
+  ucs_vnic_template:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    template_name={{ item.template_name }}
+    template_desc={{ item.template_desc }}
+    mac_pool_name={{ item.mac_pool_name }}
+    qos_policy={{ item.qos_policy }}
+    vlan_list={{ item.vlan_list }}
+    mtu={{ item.mtu }}
+    switch_id={{ item.switch_id }}
+  with_items: vnic_templates
+
+- name: Create UCS vhba template
+  ucs_vhba_template:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    template_name={{ item.template_name }}
+    template_desc={{ item.template_desc }}
+    wwpn_pool_name={{ item.wwpn_pool_name }}
+    vsan_list={{ item.vsan_list }}
+    switch_id={{ item.switch_id }}
+  with_items: vhba_templates
+
+- name: Create UCS Service Profile template
+  ucs_service_profile_template:
+    ucsm_ip={{ inventory_hostname }} ucsm_user=ucsm_cred_user ucsm_pw=ucsm_cred_pw
+    state={{ item.state }}
+    template_name={{ item.template_name }}
+    template_desc={{ item.template_desc }}
+    template_type={{ item.template_type }}
+    uuid_pool_name={{ item.uuid_pool_name }}
+    wwnn_pool_name={{ item.wwnn_pool_name }}
+    server_pool_name={{ item.server_pool_name }}
+    boot_policy_name={{ item.boot_policy_name }}
+    firmware_policy_name={{ item.firmware_policy_name }}
+    maintenance_policy_name={{ item.maintenance_policy_name }}
+    power_policy_name={{ item.power_policy_name }}
+    vnic_templates={{ item.vnic_templates }}
+    vhba_templates={{ item.vhba_templates }}
+  with_items: service_profile_templates

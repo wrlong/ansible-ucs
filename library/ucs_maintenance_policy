@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+module: ucs_maintenance_policy
+version_added: 0.1
+short_description: ucs_maintenance_policy short description
+description: ucs_maintenance_policydescription
+author: Tory Long
+'''
+
+import sys
+import json
+from UcsSdk import *
+
+EXAMPLES = '''
+Examples
+'''
+
+def ucs_maintenance_policy(module):
+
+    policy_name = module.params['policy_name']
+    policy_desc = module.params['policy_desc']
+
+    results = {}
+
+    try:
+        logging.info("Connecting to UCSM at " + module.params['ucsm_ip'])
+        handle = UcsHandle()
+        login_status = handle.Login(
+            module.params['ucsm_ip'],
+            module.params['ucsm_user'],
+            module.params['ucsm_pw'])
+    except:
+        module.fail_json(msg="Could not login to UCSM")
+
+    try:
+        logging.info("Testing existence of " + \
+                        module.params['policy_name'])
+        test_obj = handle.GetManagedObject(
+                     None,
+                     LsmaintMaintPolicy.ClassId(),
+                     {LsmaintMaintPolicy.NAME:policy_name\
+                        })
+    except:
+        module.fail_json(msg="Could not test for existence of object")
+
+    obj_exists = lambda test_obj: True if test_obj != [] else False
+
+    if module.params['state'] == "present":
+        if obj_exists(test_obj) == False:
+            try:
+                handle.AddManagedObject(
+                    None,
+                    LsmaintMaintPolicy.ClassId(),
+                    {LsmaintMaintPolicy.UPTIME_DISR: "user-ack",
+                     LsmaintMaintPolicy.SCHED_NAME: "",
+                     LsmaintMaintPolicy.DN: "org-root/maint-" + policy_name,
+                     LsmaintMaintPolicy.DESCR: policy_desc,
+                     LsmaintMaintPolicy.POLICY_OWNER: "local",
+                     LsmaintMaintPolicy.NAME: policy_name})
+
+            except:
+                module.fail_json(msg="Could not create object")
+        else:
+                results['policy_name'] = policy_name
+                results['created'] = False
+                results['changed'] = False
+                results['state'] = "present"
+    else:
+        if obj_exists(test_obj) == True:
+            try:
+                handle.RemoveManagedObject(test_obj)
+                results['policy_name'] = policy_name
+                results['created'] = False
+                results['changed'] = True
+                results['state'] = "absent"
+            except:
+                module.fail_json(msg="Could not remove object")
+        else:
+                results['policy_name'] = policy_name
+                results['created'] = False
+                results['changed'] = False
+                results['state'] = "absent"
+
+    try:
+        handle.Logout()
+    except UcsLogoutError:
+        module.fail_json(msg="Could not logout of UCSM")
+
+    return results
+
+### ---------------------------------------------------------------------------
+### MAIN
+### ---------------------------------------------------------------------------
+
+def main():
+  module = AnsibleModule(
+    argument_spec = dict(
+      ucsm_ip=dict(required=True),
+      ucsm_user=dict(required=True),
+      ucsm_pw=dict(required=True),
+      state=dict(required=True),
+      policy_name=dict(required=True),
+      policy_desc=dict(required=True),
+      outputfile=dict(required=False),
+      override=dict(required=False, default=False),
+      logfile=dict(required=False, default=None),
+      timeout=dict(required=False, default=0)
+    ),
+    supports_check_mode = False
+  )
+
+  results = ucs_maintenance_policy(module)
+
+  module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

@@ -1,0 +1,249 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+module: ucs_service_profile_template
+version_added: 0.1
+short_description: ucs_service_profile_template short description
+description: ucs_service_profile_templatedescription
+author: Tory Long
+'''
+
+import sys
+import json
+from UcsSdk import *
+
+EXAMPLES = '''
+Examples
+'''
+
+def ucs_service_profile_template(module):
+
+    sp_templ_name = module.params['template_name']
+    template_desc = module.params['template_desc']
+    boot_policy_name = module.params['boot_policy_name']
+    uuid_pool_name = module.params['uuid_pool_name']
+    wwnn_pool_name = module.params['wwnn_pool_name']
+    spt_vnic_templates = module.params['vnic_templates']
+    spt_vhba_templates = module.params['vhba_templates']
+    server_pool_name = module.params['server_pool_name']
+    firmware_policy_name = module.params['firmware_policy_name']
+    maintenance_policy_name = module.params['maintenance_policy_name']
+    template_type = module.params['template_type']
+    power_policy_name = module.params['power_policy_name']
+    sp_power_state = module.params['power_state']
+    server_pool_qual_name = module.params['server_pool_qual_name']
+
+    results = {}
+
+    try:
+        logging.info("Connecting to UCSM at " + module.params['ucsm_ip'])
+        handle = UcsHandle()
+        login_status = handle.Login(
+            module.params['ucsm_ip'],
+            module.params['ucsm_user'],
+            module.params['ucsm_pw'])
+    except:
+        module.fail_json(msg="Could not login to UCSM")
+
+    try:
+        logging.info("Testing existence of " + \
+                        module.params['template_name'])
+        test_obj = handle.GetManagedObject(
+                     None,
+                     LsServer.ClassId(),
+                     {LsServer.NAME:sp_templ_name })
+    except:
+        module.fail_json(msg="Could not test for existence of object")
+
+    obj_exists = lambda test_obj: True if test_obj != [] else False
+
+    if module.params['state'] == "present":
+        if obj_exists(test_obj) == False:
+            try:
+                mo = handle.AddManagedObject(
+                        None,
+                        LsServer.ClassId(),
+                        {LsServer.EXT_IPPOOL_NAME:  "ext-mgmt",
+                         LsServer.BOOT_POLICY_NAME:  boot_policy_name,
+                         LsServer.TYPE:  template_type,
+                         LsServer.DYNAMIC_CON_POLICY_NAME:  "",
+                         LsServer.DESCR: template_desc,
+                         LsServer.BIOS_PROFILE_NAME: "",
+                         LsServer.SRC_TEMPL_NAME: "",
+                         LsServer.EXT_IPSTATE: "pooled",
+                         LsServer.AGENT_POLICY_NAME: "",
+                         LsServer.LOCAL_DISK_POLICY_NAME: "default",
+                         LsServer.HOST_FW_POLICY_NAME: firmware_policy_name,
+                         LsServer.MGMT_FW_POLICY_NAME: "",
+                         LsServer.MGMT_ACCESS_POLICY_NAME: "",
+                         LsServer.UUID: "0",
+                         LsServer.DN: "org-root/ls-" + sp_templ_name,
+                         LsServer.MAINT_POLICY_NAME: maintenance_policy_name,
+                         LsServer.SCRUB_POLICY_NAME: "",
+                         LsServer.USR_LBL: "",
+                         LsServer.SOL_POLICY_NAME: "",
+                         LsServer.POWER_POLICY_NAME: power_policy_name,
+                         LsServer.VCON_PROFILE_NAME: "",
+                         LsServer.IDENT_POOL_NAME: uuid_pool_name,
+                         LsServer.POLICY_OWNER: "local",
+                         LsServer.NAME: sp_templ_name,
+                         LsServer.STATS_POLICY_NAME: "default"})
+
+                adapter_count = 1
+
+                spt_vnic_templates = spt_vnic_templates.split(",")
+
+                for vnic in spt_vnic_templates:
+
+                    mo_1 = handle.AddManagedObject(
+                            mo,
+                            LsVConAssign.ClassId(),
+                            {LsVConAssign.VNIC_NAME: vnic,
+                             LsVConAssign.TRANSPORT: "ethernet",
+                             LsVConAssign.ORDER: adapter_count,
+                             LsVConAssign.ADMIN_VCON: "1",
+                             LsVConAssign.DN: "org-root/ls-" + sp_templ_name +
+                                  "/assign-ethernet-vnic-"+vnic},
+                            True)
+
+                    mo_3 = handle.AddManagedObject(
+                            mo,
+                            VnicEther.ClassId(),
+                            {VnicEther.DN: "org-root/ls-" + sp_templ_name + \
+                                           "/ether-" + vnic,
+                             VnicEther.ORDER: adapter_count,
+                             VnicEther.NAME: vnic,
+                             VnicEther.ADMIN_VCON: "1",
+                             VnicEther.NW_TEMPL_NAME: vnic})
+
+                adapter_count += 1
+
+                if spt_vhba_templates != None:
+                    spt_vhba_templates = spt_vhba_templates.split(",")
+                    for vhba in spt_vhba_templates:
+                        mo_2 = handle.AddManagedObject(
+                                mo,
+                                LsVConAssign.ClassId(),
+                                {LsVConAssign.VNIC_NAME: vhba,
+                                 LsVConAssign.TRANSPORT: "fc",
+                                 LsVConAssign.ORDER: adapter_count,
+                                 LsVConAssign.ADMIN_VCON: "2",
+                                 LsVConAssign.DN: "org-root/ls-" + \
+                                                  sp_templ_name + \
+                                                  "/assign-fc-vnic-" + vhba},
+                                True)
+
+                        mo_4 = handle.AddManagedObject(
+                                mo,
+                                VnicFc.ClassId(),
+                                {VnicFc.ADMIN_VCON: "2",
+                                 VnicFc.NW_TEMPL_NAME: vhba,
+                                 VnicFc.ORDER: adapter_count,
+                                 VnicFc.MAX_DATA_FIELD_SIZE: "2048",
+                                 VnicFc.NAME: vhba,
+                                 VnicFc.DN: "org-root/ls-" + sp_templ_name + \
+                                            "/fc-" + vhba})
+
+                adapter_count += 1
+
+                # Add FC WWNN
+                if wwnn_pool_name != None:
+                    mo_wwnn = handle.AddManagedObject(
+                                mo,
+                                VnicFcNode.ClassId(),
+                                {VnicFcNode.ADDR: "pool-derived",
+                                 VnicFcNode.DN: "org-root/ls-" + \
+                                                sp_templ_name + \
+                                                "/fc-node",
+                                 VnicFcNode.IDENT_POOL_NAME: wwnn_pool_name},
+                                True)
+
+                # Add Server Pool
+                mo_svr_pool = handle.AddManagedObject(
+                                mo,
+                                LsRequirement.ClassId(),
+                                {LsRequirement.NAME: server_pool_name,
+                                 LsRequirement.RESTRICT_MIGRATION: "no",
+                                 LsRequirement.DN: "org-root/ls-" + \
+                                                    sp_templ_name + "/pn-req",
+                                 LsRequirement.QUALIFIER: server_pool_qual_name},
+                                True)
+
+                # Add Power State
+                mo_power = handle.AddManagedObject(
+                                mo,
+                                LsPower.ClassId(),
+                                {LsPower.DN: "org-root/ls-" + sp_templ_name + \
+                                             "/power",
+                                 LsPower.STATE: sp_power_state},
+                                True)
+            except:
+                module.fail_json(msg="Could not create object")
+        else:
+                results['template_name'] = sp_templ_name
+                results['created'] = False
+                results['changed'] = False
+                results['state'] = "present"
+    else:
+        if obj_exists(test_obj) == True:
+            try:
+                handle.RemoveManagedObject(test_obj)
+                results['template_name'] = sp_templ_name
+                results['created'] = False
+                results['changed'] = True
+                results['state'] = "absent"
+            except:
+                module.fail_json(msg="Could not remove object")
+        else:
+                results['template_name'] = sp_templ_name
+                results['created'] = False
+                results['changed'] = False
+                results['state'] = "absent"
+
+    try:
+        handle.Logout()
+    except UcsLogoutError:
+        module.fail_json(msg="Could not logout of UCSM")
+
+    return results
+
+### ---------------------------------------------------------------------------
+### MAIN
+### ---------------------------------------------------------------------------
+
+def main():
+  module = AnsibleModule(
+    argument_spec = dict(
+      ucsm_ip=dict(required=True),
+      ucsm_user=dict(required=True),
+      ucsm_pw=dict(required=True),
+      state=dict(required=True),
+      template_name=dict(required=True),
+      template_desc=dict(required=True),
+      boot_policy_name=dict(required=True),
+      uuid_pool_name=dict(required=True),
+      wwnn_pool_name=dict(required=False, default=None),
+      vnic_templates=dict(required=True),
+      vhba_templates=dict(required=False, default=None),
+      server_pool_name=dict(required=False, default=None),
+      firmware_policy_name=dict(required=False, default=None),
+      maintenance_policy_name=dict(required=False, default=None),
+      server_pool_qual_name=dict(required=False, default="all-chassis"),
+      template_type=dict(required=False, default="updating-template"),
+      power_policy_name=dict(required=False, default="default"),
+      power_state=dict(required=False, default="admin-up"),
+      outputfile=dict(required=False),
+      override=dict(required=False, default=False),
+      logfile=dict(required=False, default=None),
+      timeout=dict(required=False, default=0)
+    ),
+    supports_check_mode = False
+  )
+
+  results = ucs_service_profile_template(module)
+
+  module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

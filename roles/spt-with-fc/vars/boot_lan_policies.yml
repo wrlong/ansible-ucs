@@ -1,0 +1,6 @@
+--- 
+boot_lan_policies: 
+  - policy_name: 'bfl-pol-ans1'
+    policy_desc: 'test-desc'
+    vnic_name: 'vnic_eth0'
+    state: 'present'
